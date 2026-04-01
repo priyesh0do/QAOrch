@@ -1,0 +1,232 @@
+{
+  "version": "3.0.0",
+  "architecture": "agent-driven",
+  "scenario": "fresh",
+  "projectName": "AbsenceManagementWorkflowTesting",
+  "moduleName": "WD_Testing",
+  "projectPath": "C:\\Working\\FreshProjectAutomationUsingWorkflow",
+  "referenceProjectPath": "C:\\Working\\AbsenceManagementAutomation",
+  "frontendProjectPath": "C:\\Working\\myworkplace-product-modules\\modules\\wfm-absence-management\\frontend",
+  "requirementPath": "C:\\Working\\FreshProjectAutomationUsingWorkflow\\requirements\\AbsenceRules",
+  "baseUrl": "http://localhost:5173/wfm-absence-management/absence-codes",
+  "framework": "Playwright",
+  "language": "JavaScript",
+  "agents": {
+    "enabled": true,
+    "parallelExecution": true,
+    "maxConcurrentAgents": 3,
+    "availableAgents": [
+      {
+        "name": "FunctionalTestAutomationAgent",
+        "enabled": true,
+        "autonomyLevel": "low",
+        "parallelizable": true,
+        "dependencies": [],
+        "description": "Generate functional tests with point-to-point traceability",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "outputs": [
+          "test-designs/{module}/functional-design.md",
+          "test-designs/{module}/traceability-matrix.md",
+          "pages/{module}/*.page.js",
+          "tests/functional/{module}/*.spec.js"
+        ]
+      },
+      {
+        "name": "IntegrationTestAgent",
+        "enabled": true,
+        "autonomyLevel": "low",
+        "parallelizable": true,
+        "dependencies": ["FunctionalTestAutomationAgent"],
+        "description": "Generate integration tests with database validation",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "outputs": [
+          "test-designs/{module}/integration-design.md",
+          "test-designs/{module}/data-flow-diagram.md",
+          "tests/integration/{module}/*.spec.js"
+        ]
+      },
+      {
+        "name": "APITestAgent",
+        "enabled": true,
+        "autonomyLevel": "low",
+        "parallelizable": true,
+        "dependencies": [],
+        "description": "Generate API tests from OpenAPI/Swagger specs",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "outputs": [
+          "tests/api/{module}/*.spec.js",
+          "tests/api/services/apiClient.js",
+          "tests/api/services/schemaValidator.js"
+        ]
+      },
+      {
+        "name": "LocatorHealingAgent",
+        "enabled": true,
+        "autonomyLevel": "low",
+        "parallelizable": false,
+        "dependencies": [],
+        "description": "Auto-heal broken locators with up to 5 alternatives",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "monitoring": {
+          "enabled": false,
+          "triggerOnFailure": true
+        },
+        "outputs": [
+          "Updated page objects with healed locators",
+          "logs/{module}-healing-report.md",
+          "Backup files: *.page.js.bak"
+        ]
+      },
+      {
+        "name": "EndToEndTestAgent",
+        "enabled": true,
+        "autonomyLevel": "low",
+        "parallelizable": true,
+        "dependencies": ["FunctionalTestAutomationAgent", "IntegrationTestAgent"],
+        "description": "Generate E2E tests covering complete user journeys",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "outputs": [
+          "test-designs/{module}/e2e-design.md",
+          "test-designs/{module}/user-journey-map.md",
+          "tests/e2e/{module}/*.spec.js"
+        ]
+      },
+      {
+        "name": "ProjectSetupAgent",
+        "enabled": true,
+        "autonomyLevel": "medium",
+        "parallelizable": false,
+        "dependencies": [],
+        "description": "Initialize project structure and analyze reference projects",
+        "approvalCheckpoints": ["analysis", "design", "generation", "validation"],
+        "outputs": [
+          "Project directory structure",
+          "rules.md",
+          "Base classes and configurations"
+        ]
+      }
+    ],
+    "orchestration": {
+      "strategy": "dependency-aware",
+      "parallelLevels": true,
+      "failureHandling": "continue-others"
+    }
+  },
+  "workflows": {
+    "enabled": false,
+    "directory": "workflows/",
+    "main": "orchestrator.md",
+    "available": [
+      "project-setup-workflow.md",
+      "functional-testing-workflow.md",
+      "integration-testing-workflow.md",
+      "e2e-testing-workflow.md",
+      "api-testing-workflow.md",
+      "healing-workflow.md"
+    ],
+    "description": "Workflows deprecated in v3.0.0 - kept as reference documentation only",
+    "deprecationNotice": "Workflows are deprecated in favor of agent-driven architecture. Use 'test-orchestrator agent start' commands instead."
+  },
+  "mcpServers": {
+    "mds": {
+      "enabled": true,
+      "required": true,
+      "name": "mds-mcp",
+      "description": "MDS Design System MCP Server - Provides component documentation, props, events, slots",
+      "usedBy": ["FunctionalTestAutomationAgent", "IntegrationTestAgent"],
+      "tools": [
+        "mcp__mds-mcp__listAllComponents",
+        "mcp__mds-mcp__getComponentDocs",
+        "mcp__mds-mcp__getComponentExamples",
+        "mcp__mds-mcp__getUtilityClasses",
+        "mcp__mds-mcp__getDesignTokens"
+      ]
+    },
+    "platformUI": {
+      "enabled": true,
+      "required": true,
+      "name": "platform-ui",
+      "description": "Platform UI Shell Helpers MCP Server - Provides shell helper documentation",
+      "usedBy": ["FunctionalTestAutomationAgent", "IntegrationTestAgent", "APITestAgent"],
+      "tools": [
+        "mcp__platform-ui__list_shell_helpers",
+        "mcp__platform-ui__get_shell_helper_docs",
+        "mcp__platform-ui__get_shell_helper_examples"
+      ]
+    },
+    "chromeDevTools": {
+      "enabled": true,
+      "required": false,
+      "name": "chrome-devtools",
+      "description": "Chrome DevTools MCP Server - Provides DOM inspection and locator extraction",
+      "usedBy": ["LocatorHealingAgent"],
+      "tools": [
+        "chrome-devtools__inspect_element",
+        "chrome-devtools__get_dom_snapshot",
+        "chrome-devtools__extract_locators"
+      ],
+      "config": {
+        "browserPath": "chrome",
+        "headless": false,
+        "timeout": 30000
+      }
+    }
+  },
+  "mdsIntegration": {
+    "enabled": true,
+    "mcpServerRequired": true,
+    "components": [
+      "MdsButton",
+      "MdsInput",
+      "MdsSelect",
+      "MdsDatePicker",
+      "MdsCheckbox",
+      "MdsRadio",
+      "MdsTextarea",
+      "MdsTable",
+      "MdsDialog"
+    ]
+  },
+  "platformUIHelpers": {
+    "enabled": true,
+    "mcpServerRequired": true,
+    "helpers": [
+      "logger",
+      "http",
+      "storage"
+    ]
+  },
+  "fileNaming": {
+    "pageObjects": "*.page.js",
+    "testFiles": "*.spec.js"
+  },
+  "testLayers": {
+    "functional": {
+      "enabled": true,
+      "outputPath": "tests/functional",
+      "agent": "FunctionalTestAutomationAgent"
+    },
+    "integration": {
+      "enabled": true,
+      "outputPath": "tests/integration",
+      "agent": "IntegrationTestAgent"
+    },
+    "api": {
+      "enabled": true,
+      "outputPath": "tests/api",
+      "agent": "APITestAgent"
+    }
+  },
+  "migration": {
+    "fromVersion": "2.0.0",
+    "toVersion": "3.0.0",
+    "breaking": true,
+    "notes": [
+      "Pure agent-driven architecture - workflows deprecated",
+      "Use 'test-orchestrator agent start --agent <name>' instead of workflow commands",
+      "All 4 approval checkpoints required: analysis, design, generation, validation",
+      "Parallel execution supported for independent agents",
+      "State management enables agent coordination"
+    ]
+  }
+}
